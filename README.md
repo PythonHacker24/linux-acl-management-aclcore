@@ -1,6 +1,6 @@
 <div align="center">
 
-# File Server Daemons Component - Linux ACL Management Interface  
+# File Server Daemons Component (Core Component) - Linux ACL Management Interface  
 
 <img width="600" hegith="600" src="https://github.com/user-attachments/assets/a1625f58-0cd8-4df9-babc-31547b18d55a">
 
