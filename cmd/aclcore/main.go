@@ -12,6 +12,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/PythonHacker24/linux-acl-management-aclcore/config"
+	"github.com/PythonHacker24/linux-acl-management-aclcore/internal/manager"
 	"github.com/PythonHacker24/linux-acl-management-aclcore/internal/utils"
 )
 
@@ -92,7 +93,24 @@ func exec() error {
 
 func run(ctx context.Context) error {
 
-	<-ctx.Done()
+	/* error channel for error propogation */
+	errCh := make(chan error, 1)
+
+	/* run the connection pool with manager */
+	manager.ConnPool(errCh)
+
+	select {
+	case <-ctx.Done():
+		zap.L().Info("Shutdown process initiated")
+	case err := <-errCh:
+
+		/* context done can be called here (optional for now) */
+
+		zap.L().Error("Fatal Error from core",
+			zap.Error(err),
+		)
+		return err
+	}
 
 	zap.L().Info("Shutting down core daemon")
 
