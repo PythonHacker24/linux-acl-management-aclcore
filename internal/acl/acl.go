@@ -12,8 +12,8 @@ var pathLocks sync.Map
 
 /* locks a given file path */
 func getPathLock(path string) *sync.Mutex {
-    mtx, _ := pathLocks.LoadOrStore(path, &sync.Mutex{})
-    return mtx.(*sync.Mutex)
+	mtx, _ := pathLocks.LoadOrStore(path, &sync.Mutex{})
+	return mtx.(*sync.Mutex)
 }
 
 /* handle connection for ACL requests */
