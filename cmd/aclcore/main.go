@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
+	"time"
 
 	"github.com/MakeNowJust/heredoc"
 	"github.com/spf13/cobra"
@@ -96,21 +98,44 @@ func run(ctx context.Context) error {
 	/* error channel for error propogation */
 	errCh := make(chan error, 1)
 
-	/* run the connection pool with manager */
-	manager.ConnPool(errCh)
+	/* create a wait group */
+	var wg sync.WaitGroup
 
-	select {
-	case <-ctx.Done():
-		zap.L().Info("Shutdown process initiated")
-	case err := <-errCh:
+	/* handle session and processor errors */
+	wg.Add(1)
+	go func(ctx context.Context) {
+		defer wg.Done()
+		zap.L().Info("log error handler started")
+		for {
+			select {
+			case err, ok := <-errCh:
+				if !ok {
+					zap.L().Info("log error channel closed")
+					return
+				}
+				if err != nil {
+					zap.L().Error("error occurred",
+						zap.Error(err),
+						zap.Time("timestamp", time.Now()),
+					)
+				}
+			case <-ctx.Done():
+				zap.L().Info("log error handler shutting down")
+				return
+			}
+		}
+	}(ctx)
 
-		/* context done can be called here (optional for now) */
+	/* start the connection pool */
+	go func() {
+		if err := manager.ConnPool(ctx, errCh); err != nil {
+			zap.L().Error("ConnPool exited",
+				zap.Error(err),
+			)
+		}
+	}()
 
-		zap.L().Error("Fatal Error from core",
-			zap.Error(err),
-		)
-		return err
-	}
+	wg.Wait()
 
 	zap.L().Info("Shutting down core daemon")
 
