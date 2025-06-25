@@ -7,7 +7,6 @@ import (
 	"os/signal"
 	"sync"
 	"syscall"
-	"time"
 
 	"github.com/MakeNowJust/heredoc"
 	"github.com/spf13/cobra"
@@ -101,39 +100,12 @@ func run(ctx context.Context) error {
 	/* create a wait group */
 	var wg sync.WaitGroup
 
-	/* handle session and processor errors */
-	wg.Add(1)
-	go func(ctx context.Context) {
-		defer wg.Done()
-		zap.L().Info("log error handler started")
-		for {
-			select {
-			case err, ok := <-errCh:
-				if !ok {
-					zap.L().Info("log error channel closed")
-					return
-				}
-				if err != nil {
-					zap.L().Error("error occurred",
-						zap.Error(err),
-						zap.Time("timestamp", time.Now()),
-					)
-				}
-			case <-ctx.Done():
-				zap.L().Info("log error handler shutting down")
-				return
-			}
-		}
-	}(ctx)
-
-	/* start the connection pool */
-	go func() {
-		if err := manager.ConnPool(ctx, errCh); err != nil {
-			zap.L().Error("ConnPool exited",
-				zap.Error(err),
-			)
-		}
-	}()
+	server := manager.NewACLServer(config.COREDConfig.DConfig.SocketPath, errCh)
+	if err := server.Start(ctx, &wg); err != nil {
+		zap.L().Error("Failed to start ACL server",
+			zap.Error(err),
+		)
+	}
 
 	wg.Wait()
 
