@@ -19,7 +19,7 @@ func getPathLock(path string) *sync.Mutex {
 /* handle connection for ACL requests */
 func HandleConnection(conn net.Conn) error {
 	/* close the connection before function ends */
-	// defer conn.Close()
+	defer conn.Close()
 
 	/* create 1 KB buffer (MAKE THIS MODIFIABLE) */
 	buf := make([]byte, 1024)
