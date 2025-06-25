@@ -4,6 +4,8 @@
 daemon:
   # Enable debug mode (true for development, false for production)
   debug_mode: true
+  socket_path: 
+  max_conn_pool: 1
 
 # Logging section
 logs:
