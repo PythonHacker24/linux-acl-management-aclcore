@@ -4,70 +4,80 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"os"
 	"sync"
-	"time"
 
 	"github.com/PythonHacker24/linux-acl-management-aclcore/config"
 	"github.com/PythonHacker24/linux-acl-management-aclcore/internal/acl"
+	"go.uber.org/zap"
 )
 
-/*
-TODO: follow the case select pattern for context handling here
-fix the whole code till it's production ready
-*/
-func ConnPool(ctx context.Context, errCh chan<- error) error {
+/* creates a new ACL server */
+func NewACLServer(path string, errCh chan error) *ACLServer {
+	return &ACLServer{
+		socketPath: path,
+		errCh:      errCh,
+	}
+}
 
-	/* declare a semaphore for maximum connections */
+/* starts the ACL server */
+func (s *ACLServer) Start(ctx context.Context, wg *sync.WaitGroup) error {
+	if err := os.RemoveAll(s.socketPath); err != nil {
+		return err
+	}
+
+	listener, err := net.Listen("unix", s.socketPath)
+	if err != nil {
+		return fmt.Errorf("failed to create socket connection: %w", err)
+	}
+
+	s.listener = listener
+
 	sem := make(chan struct{}, config.COREDConfig.DConfig.MaxConnPool)
-	var wg sync.WaitGroup
+
+	done := make(chan struct{})
+
+	go func() {
+		<-ctx.Done()
+		zap.L().Info("Shutting down ACL server")
+		s.listener.Close()
+		close(done)
+	}()
 
 	for {
-		select {
-		case <-ctx.Done():
-			wg.Wait()
-			return nil
-		default:
-			conn, err := net.Dial("unix", config.COREDConfig.DConfig.SocketPath)
-			if err != nil {
-				select {
-				case errCh <- fmt.Errorf("failed to dial Unix socket: %w", err):
-				default:
-					/* drop error if channel is full (must be rare) */
-				}
-				/* give it some rest */
-				time.Sleep(time.Second)
-				/* continue with the next connection */
+		conn, err := listener.Accept()
+		if err != nil {
+			select {
+			case <-ctx.Done():
+				<-done
+				fmt.Println("ACL server shutdown complete.")
+				return nil
+			default:
+				fmt.Println("Accept error:", err)
 				continue
 			}
+		}
 
-			/* connection is now established */
-
-			/* acquire semaphore slot (or wait until slot is free and stop if ctx is done) */
-			select {
-			case sem <- struct{}{}:
-				/* semaphore slot granted, continue */
-			case <-ctx.Done():
-				conn.Close()
-				return nil
-			}
-
-			/* add to waitgroup */
+		select {
+		/* acquire a slot */
+		case sem <- struct{}{}:
+			/* add process the waitgroup */
 			wg.Add(1)
 
-			/* call handler asynchronously */
+			/* handle connection asynchronously */
 			go func(c net.Conn) {
 				defer wg.Done()
-				defer c.Close()
+
+				/* release the slot */
 				defer func() { <-sem }()
 
-				if err := acl.HandleConnection(c); err != nil {
-					select {
-					case errCh <- fmt.Errorf("connection handler error: %w", err):
-					default:
-						/* drop if error channel is full (rare case) */
-					}
-				}
+				acl.HandleConnection(c)
 			}(conn)
+		default:
+			/* no slot available, let client know */
+			fmt.Println(conn, `{"error": "server overloaded"}`)
+			zap.L().Info("rejecting connection")
+			conn.Close()
 		}
 	}
 }
