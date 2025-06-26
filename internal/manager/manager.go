@@ -79,7 +79,7 @@ func (s *ACLServer) Start(ctx context.Context, wg *sync.WaitGroup, maxQueue, max
 			/* connection enqueued successfully */
 		default:
 			/* connection queue is full */
-			zap.L().Error("Request dropped: queue full")
+			zap.L().Warn("Request dropped: queue full")
 			errorResponse(conn, "server overloaded, try later")
 		}
 	}
