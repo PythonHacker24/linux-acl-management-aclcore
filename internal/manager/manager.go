@@ -21,16 +21,21 @@ func NewACLServer(path string, errCh chan error) *ACLServer {
 
 /* starts the ACL server */
 func (s *ACLServer) Start(ctx context.Context, wg *sync.WaitGroup, maxQueue, maxConcurrent int) error {
+	/* remove existing socket file */
 	if err := os.RemoveAll(s.socketPath); err != nil {
 		return err
 	}
 
+	/* create a Unix socket listener */
 	listener, err := net.Listen("unix", s.socketPath)
 	if err != nil {
 		return fmt.Errorf("failed to create socket connection: %w", err)
 	}
 
+	/* set the ACLServer listerner */
 	s.listener = listener
+
+	/* create connection queue for ACLServer */
 	s.queueChan = make(chan net.Conn, maxQueue)
 
 	/* worker pool */
@@ -40,11 +45,17 @@ func (s *ACLServer) Start(ctx context.Context, wg *sync.WaitGroup, maxQueue, max
 			defer wg.Done()
 			for {
 				select {
+				/* handle connections if in the queue */
 				case conn, ok := <-s.queueChan:
 					if !ok {
 						return
 					}
-					acl.HandleConnection(conn)
+					err := acl.HandleConnection(conn)
+					if err != nil {
+						zap.L().Error("Error handling connections",
+							zap.Error(err),
+						)
+					}
 				case <-ctx.Done():
 					return
 				}
@@ -60,6 +71,7 @@ func (s *ACLServer) Start(ctx context.Context, wg *sync.WaitGroup, maxQueue, max
 	}()
 
 	for {
+		/* accpet incoming connection */
 		conn, err := s.listener.Accept()
 		if err != nil {
 			select {
