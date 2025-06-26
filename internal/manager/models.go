@@ -9,4 +9,5 @@ type ACLServer struct {
 	socketPath string
 	errCh      chan error
 	listener   net.Listener
+	queueChan  chan net.Conn
 }
