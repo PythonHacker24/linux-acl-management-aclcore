@@ -7,7 +7,6 @@ import (
 	"os"
 	"sync"
 
-	"github.com/PythonHacker24/linux-acl-management-aclcore/config"
 	"github.com/PythonHacker24/linux-acl-management-aclcore/internal/acl"
 	"go.uber.org/zap"
 )
@@ -21,7 +20,7 @@ func NewACLServer(path string, errCh chan error) *ACLServer {
 }
 
 /* starts the ACL server */
-func (s *ACLServer) Start(ctx context.Context, wg *sync.WaitGroup) error {
+func (s *ACLServer) Start(ctx context.Context, wg *sync.WaitGroup, maxQueue, maxConcurrent int) error {
 	if err := os.RemoveAll(s.socketPath); err != nil {
 		return err
 	}
@@ -32,52 +31,56 @@ func (s *ACLServer) Start(ctx context.Context, wg *sync.WaitGroup) error {
 	}
 
 	s.listener = listener
+	s.queueChan = make(chan net.Conn, maxQueue)
 
-	sem := make(chan struct{}, config.COREDConfig.DConfig.MaxConnPool)
-
-	done := make(chan struct{})
+	/* worker pool */
+	for i := 0; i < maxConcurrent; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for {
+				select {
+				case conn, ok := <-s.queueChan:
+					if !ok {
+						return
+					}
+					acl.HandleConnection(conn)
+				case <-ctx.Done():
+					return
+				}
+			}
+		}()
+	}
 
 	go func() {
 		<-ctx.Done()
 		zap.L().Info("Shutting down ACL server")
 		s.listener.Close()
-		close(done)
+		close(s.queueChan)
 	}()
 
 	for {
-		conn, err := listener.Accept()
+		conn, err := s.listener.Accept()
 		if err != nil {
 			select {
 			case <-ctx.Done():
-				<-done
-				fmt.Println("ACL server shutdown complete.")
+				zap.L().Info("ACL server shutdown complete")
 				return nil
 			default:
-				fmt.Println("Accept error:", err)
+				zap.L().Error("Accept error:",
+					zap.Error(err),
+				)
 				continue
 			}
 		}
 
 		select {
-		/* acquire a slot */
-		case sem <- struct{}{}:
-			/* add process the waitgroup */
-			wg.Add(1)
-
-			/* handle connection asynchronously */
-			go func(c net.Conn) {
-				defer wg.Done()
-
-				/* release the slot */
-				defer func() { <-sem }()
-
-				acl.HandleConnection(c)
-			}(conn)
+		case s.queueChan <- conn:
+			/* connection enqueued successfully */
 		default:
-			/* no slot available, let client know */
-			fmt.Println(conn, `{"error": "server overloaded"}`)
-			zap.L().Info("rejecting connection")
-			conn.Close()
+			/* connection queue is full */
+			zap.L().Error("Request dropped: queue full")
+			errorResponse(conn, "server overloaded, try later")
 		}
 	}
 }
