@@ -101,7 +101,11 @@ func run(ctx context.Context) error {
 	var wg sync.WaitGroup
 
 	server := manager.NewACLServer(config.COREDConfig.DConfig.SocketPath, errCh)
-	if err := server.Start(ctx, &wg); err != nil {
+	if err := server.Start(ctx,
+		&wg,
+		config.COREDConfig.DConfig.MaxConnQueueLen,
+		config.COREDConfig.DConfig.MaxConcurrentConn,
+	); err != nil {
 		zap.L().Error("Failed to start ACL server",
 			zap.Error(err),
 		)
