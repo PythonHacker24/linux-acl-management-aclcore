@@ -80,8 +80,17 @@ Manual build provides more indepth look into how components are deployed and wor
     sudo chown root:root /usr/local/bin/aclcore
     sudo chmod 755 /usr/local/bin/aclcore
     ```
+6. Create users group called `laclm`
+    ```bash
+    sudo groupadd laclm
+    ```
 
-6. Create service for ACL Core Daemon
+7. Add root user to `laclm` group
+    ```bash
+    sudo usermod -a -G laclm root
+    ```
+
+8. Create service for ACL Core Daemon
 
     a. Create the systemd service file
 
@@ -120,25 +129,25 @@ Manual build provides more indepth look into how components are deployed and wor
     WantedBy=multi-user.target
     ```
 
-7. Reload SystemD daemons
+9. Reload SystemD daemons
     
     ```bash
     sudo systemctl daemon-reload
     ```
 
-8. Enable aclcore service (optional: daemons will auto start when system is restarted)
+10. Enable aclcore service (optional: daemons will auto start when system is restarted)
     
     ```bash
     sudo systemctl enable aclcore.service
     ```
 
-9. Start aclcore service
+11. Start aclcore service
    
     ```bash
     sudo systemctl start aclcore.service
     ```
 
-8. Check aclcore status 
+12. Check aclcore status 
     ```bash
     sudo systemctl status aclcore.service
     ```
