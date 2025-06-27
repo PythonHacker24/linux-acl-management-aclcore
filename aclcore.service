@@ -1,0 +1,22 @@
+[Unit]
+Description=ACL Core Daemon
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/aclcore --config /etc/laclm/aclcore.yaml
+
+User=root
+Group=laclm
+
+PrivateTmp=yes
+ProtectSystem=full
+ProtectHome=yes
+NoNewPrivileges=yes
+
+PrivateNetwork=yes
+
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
