@@ -115,6 +115,9 @@ Manual build provides more indepth look into how components are deployed and wor
 
     # Restart on failure
     Restart=on-failure
+
+    [Install]
+    WantedBy=multi-user.target
     ```
 
 7. Reload SystemD daemons
