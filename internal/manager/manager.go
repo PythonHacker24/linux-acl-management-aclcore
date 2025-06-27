@@ -32,6 +32,8 @@ func (s *ACLServer) Start(ctx context.Context, wg *sync.WaitGroup, maxQueue, max
 		return fmt.Errorf("failed to create socket connection: %w", err)
 	}
 
+	os.Chmod(s.socketPath, 0660)
+
 	/* set the ACLServer listerner */
 	s.listener = listener
 
