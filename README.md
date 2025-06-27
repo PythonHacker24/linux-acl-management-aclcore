@@ -100,20 +100,21 @@ Manual build provides more indepth look into how components are deployed and wor
     Type=simple
     ExecStart=/usr/local/bin/aclcore --config /etc/laclm/aclcore.yaml
 
+    # Run as root
     User=root
     Group=laclm
 
+    # Security hardening
     PrivateTmp=yes
     ProtectSystem=full
     ProtectHome=yes
     NoNewPrivileges=yes
 
+    # Drop network access
     PrivateNetwork=yes
 
+    # Restart on failure
     Restart=on-failure
-
-    [Install]
-    WantedBy=multi-user.target
     ```
 
 7. Reload SystemD daemons
