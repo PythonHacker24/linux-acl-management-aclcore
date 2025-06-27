@@ -109,20 +109,16 @@ Manual build provides more indepth look into how components are deployed and wor
     Type=simple
     ExecStart=/usr/local/bin/aclcore --config /etc/laclm/aclcore.yaml
 
-    # Run as root
     User=root
     Group=laclm
 
-    # Security hardening
     PrivateTmp=yes
     ProtectSystem=full
     ProtectHome=yes
     NoNewPrivileges=yes
 
-    # Drop network access
     PrivateNetwork=yes
 
-    # Restart on failure
     Restart=on-failure
 
     [Install]
@@ -135,7 +131,7 @@ Manual build provides more indepth look into how components are deployed and wor
     sudo systemctl daemon-reload
     ```
 
-10. Enable aclcore service (optional: daemons will auto start when system is restarted)
+10. Enable aclcore service (optional: daemon will auto start when system is restarted)
     
     ```bash
     sudo systemctl enable aclcore.service
