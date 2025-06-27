@@ -64,17 +64,29 @@ Manual build provides more indepth look into how components are deployed and wor
     make build
     ```
 
-3. Move the binary to /usr/local/bin
+3. Move the binary to /usr/local/bin and 
     ```bash
-    sudo cp ./bin/acl-core /usr/local/bin/
+    sudo cp ./bin/aclcore /usr/local/bin/
+
+    ```
+4. Move configuration file to /etc/laclm
+    ```bash
+    sudo cp aclcore.yaml /etc/laclm/aclcore.yaml
     ```
 
-4. Create service for ACL Core Daemon
+5. Change Ownership of the binary and change access permissions
+
+    ```bash
+    sudo chown root:root /usr/local/bin/aclcore
+    sudo chmod 755 /usr/local/bin/aclcore
+    ```
+
+6. Create service for ACL Core Daemon
 
     a. Create the systemd service file
 
     ```bash
-    touch /etc/systemd/system/aclcore.service
+    sudo touch /etc/systemd/system/aclcore.service
     ```
 
     b. Copy this into aclcore.service
@@ -85,30 +97,46 @@ Manual build provides more indepth look into how components are deployed and wor
     After=network.target
 
     [Service]
+    Type=simple
     ExecStart=/usr/local/bin/aclcore --config /etc/laclm/aclcore.yaml
+
+    User=root
+    Group=root
+
+    PrivateTmp=yes
+    ProtectSystem=full
+    ProtectHome=yes
+    NoNewPrivileges=yes
+
+    PrivateNetwork=yes
+
     Restart=on-failure
-    User=nobody
-    Group=nogroup
 
     [Install]
     WantedBy=multi-user.target
     ```
-5. Enable and start both services
+
+7. Reload SystemD daemons
     
     ```bash
-    sudo systemctl daemon-reexec
     sudo systemctl daemon-reload
+    ```
 
+8. Enable aclcore service (optional: daemons will auto start when system is restarted)
+    
+    ```bash
     sudo systemctl enable aclcore.service
+    ```
 
+9. Start aclcore service
+   
+    ```bash
     sudo systemctl start aclcore.service
     ```
 
-6. Check status and logs
+8. Check aclcore status 
     ```bash
     sudo systemctl status aclcore.service
-
-    journalctl -u aclcore.service -f
     ```
 
 ## Project Structure
