@@ -2,6 +2,7 @@ package acl
 
 /* struct for ACL requests */
 type ACLRequest struct {
+	TxnID  string `json:"transactionID"`
 	Action string `json:"action"`
 	Entry  string `json:"entry"`
 	Path   string `json:"path"`
