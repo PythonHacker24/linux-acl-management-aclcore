@@ -5,6 +5,8 @@ import (
 	"net"
 	"os/exec"
 	"sync"
+
+	"go.uber.org/zap"
 )
 
 /* maintains locks on file which are actively under ACL modifications */
@@ -34,6 +36,14 @@ func HandleConnection(conn net.Conn) error {
 		sendResponse(conn, false, "Invalid JSON")
 		return err
 	}
+
+	/* log ACL request */
+	zap.L().Info("ACL Request recieved",
+		zap.String("Transaction ID", req.TxnID),
+		zap.String("Action", req.Action),
+		zap.String("Entry", req.Entry),
+		zap.String("Path", req.Path),
+	)
 
 	/* lock the file path for thread safety (ensure unlock even on panic) */
 	lock := getPathLock(req.Path)
