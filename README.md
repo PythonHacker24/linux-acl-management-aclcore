@@ -101,7 +101,7 @@ Manual build provides more indepth look into how components are deployed and wor
     ExecStart=/usr/local/bin/aclcore --config /etc/laclm/aclcore.yaml
 
     User=root
-    Group=root
+    Group=laclm
 
     PrivateTmp=yes
     ProtectSystem=full
