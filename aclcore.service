@@ -11,7 +11,6 @@ Group=laclm
 
 PrivateTmp=yes
 ProtectSystem=full
-ProtectHome=yes
 NoNewPrivileges=yes
 
 PrivateNetwork=yes
