@@ -114,7 +114,6 @@ Manual build provides more indepth look into how components are deployed and wor
 
     PrivateTmp=yes
     ProtectSystem=full
-    ProtectHome=yes
     NoNewPrivileges=yes
 
     PrivateNetwork=yes
