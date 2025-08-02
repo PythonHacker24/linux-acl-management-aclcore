@@ -38,16 +38,18 @@ func HandleConnection(conn net.Conn) error {
 		return err
 	}
 
+	filePath := config.COREDConfig.DConfig.BasePath + req.Path
+
 	/* log ACL request */
 	zap.L().Info("ACL Request recieved",
 		zap.String("Transaction ID", req.TxnID),
 		zap.String("Action", req.Action),
 		zap.String("Entry", req.Entry),
-		zap.String("Path", req.Path),
+		zap.String("Path", filePath),
 	)
 
 	/* lock the file path for thread safety (ensure unlock even on panic) */
-	lock := getPathLock(req.Path)
+	lock := getPathLock(filePath)
 	lock.Lock()
 	defer lock.Unlock()
 
@@ -55,9 +57,9 @@ func HandleConnection(conn net.Conn) error {
 	var cmd *exec.Cmd
 	switch req.Action {
 	case "add", "modify":
-		cmd = exec.Command("setfacl", "-m", req.Entry, config.COREDConfig.DConfig.BasePath + req.Path)
+		cmd = exec.Command("setfacl", "-m", req.Entry, filePath)
 	case "remove":
-		cmd = exec.Command("setfacl", "-x", req.Entry, config.COREDConfig.DConfig.BasePath + req.Path)
+		cmd = exec.Command("setfacl", "-x", req.Entry, filePath)
 	default:
 		sendResponse(conn, false, "Unsupported action: "+req.Action)
 		return nil
