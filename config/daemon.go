@@ -6,6 +6,7 @@ type DConfig struct {
 	SocketPath  		string		`yaml:"socket_path,omitempty"`
 	MaxConnQueueLen 	int 		`yaml:"max_conn_queue_len,omitempty"`	
 	MaxConcurrentConn	int 		`yaml:"max_conncurrent_conn,omitempty"`	
+	BasePath			string		`yaml:"base_path,omitempty"`
 }
 
 /* normalization function */
@@ -32,6 +33,8 @@ func (d *DConfig) Normalize() error {
 		/* set max concurrent connections to 5 */
 		d.MaxConcurrentConn = 5
 	}
+
+	/* if BasePath is empty, it's equivalent to the absolute path -> / */
 
 	return nil
 }
