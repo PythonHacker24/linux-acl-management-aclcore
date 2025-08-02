@@ -6,6 +6,7 @@ import (
 	"os/exec"
 	"sync"
 
+	"github.com/PythonHacker24/linux-acl-management-aclcore/config"
 	"go.uber.org/zap"
 )
 
@@ -54,9 +55,9 @@ func HandleConnection(conn net.Conn) error {
 	var cmd *exec.Cmd
 	switch req.Action {
 	case "add", "modify":
-		cmd = exec.Command("setfacl", "-m", req.Entry, req.Path)
+		cmd = exec.Command("setfacl", "-m", req.Entry, config.COREDConfig.DConfig.BasePath + req.Path)
 	case "remove":
-		cmd = exec.Command("setfacl", "-x", req.Entry, req.Path)
+		cmd = exec.Command("setfacl", "-x", req.Entry, config.COREDConfig.DConfig.BasePath + req.Path)
 	default:
 		sendResponse(conn, false, "Unsupported action: "+req.Action)
 		return nil
