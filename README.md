@@ -147,18 +147,6 @@ Manual build provides more indepth look into how components are deployed and wor
     sudo systemctl status aclcore.service
     ```
 
-## Project Structure
-
-```
-.
-├── cmd/          # Application entry points
-├── internal/     # Private application code
-├── pkg/          # Public library code
-├── api/          # API definitions and handlers
-├── docs/         # Documentation
-└── deployments/  # Deployment configurations
-```
-
 ### Contributing
 
 1. Fork the repository
