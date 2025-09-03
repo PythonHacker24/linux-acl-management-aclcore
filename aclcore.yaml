@@ -6,7 +6,7 @@ daemon:
   debug_mode: true
   socket_path: 
   max_conn_pool: 1
-  base_path: /user/ghouse/test.txt
+  base_path: /user/ghouse
 
 # Logging section
 logs:
